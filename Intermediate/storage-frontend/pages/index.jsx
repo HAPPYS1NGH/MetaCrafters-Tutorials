@@ -7,7 +7,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 // react hooks for setting and changing states of variables
 import { useEffect, useState } from 'react';
 import { useProvider, useAccount, useContractRead } from 'wagmi'
-import { useContractWrite, usePrepareContractWrite , useWaitForTransaction} from 'wagmi'
+import { useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi'
 
 export default function Home() {
   // env variables are initalised
@@ -25,11 +25,12 @@ export default function Home() {
   const provider = useProvider();
   const signer = useAccount();
 
+
   const { data, isError, isLoading } = useContractRead({
     address: contractAddress,
     abi: abi,
     functionName: 'readNum',
-    watch:true,
+    watch: true,
   })
 
   function handleForm(e) {
@@ -37,10 +38,13 @@ export default function Home() {
   }
 
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   async function readNumber() {
     setStoredNumber(parseInt(data))
     console.log(parseInt(data))
   }
+
+
 
 
   const { config } = usePrepareContractWrite({
@@ -51,7 +55,7 @@ export default function Home() {
   })
   const { data: writeNumFunc, isLoading: writeNumLoading, isSuccess, write } = useContractWrite({
     ...config,
-    
+
     onSuccess(data) {
       console.log('Success', data)
     },
@@ -62,21 +66,17 @@ export default function Home() {
 
   async function writeNumber() {
     await write();
-    console.log(writeNumFunc)
-    console.log(waitForTransaction)
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     readNumber()
-      console.log("Wait for transaction "+ waitForTransaction)
-      console.log("Use Contract Write for transaction "+ useContractWrite)
-      console.log("Use Contract Read for transaction "+ useContractRead)
-  }, [waitForTransaction , useContractWrite , useContractRead])
+    console.log("Wait for transaction " + waitForTransaction)
+  }, [readNumber, waitForTransaction])
 
 
   return (
-    <div className='m-6 space-y-4'>
-      <div className="flex p-4">
+    <div className='m-6 space-y-4 h-full'>
+      <div className="flex p-7 ">
         <h1 className="text-gray-700 text-3xl font-bold">
           Storage Frontend Demo
         </h1>
@@ -84,17 +84,33 @@ export default function Home() {
           <ConnectButton />
         </div>
       </div>
+      <div className="flex align-middle p-10 m-10 bg-white rounded-xl shadow-lg ">
+        <h3 className="text-xl py-2 px-4">The Current Stored Number is <span className="font-bold ml-6">{storedNumber}</span></h3>
+        <button className="ml-auto mr-10 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded " onClick={readNumber}>Reload</button>
+      </div>
 
-      <h3>This action retrieves the saved number from smart contract. (i.e Read Operation)</h3>
-      <button onClick={readNumber}>ReadNumber : {storedNumber}</button>
-      <h3>This will do Write function</h3>
-      <input type="text" value={enteredNumber} onChange={handleForm} />
-      <br />
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" disabled={!write} onClick={writeNumber}>
-          Write
-        </button>
-        {writeNumLoading && <div>Check Wallet</div>}
-        {waitForTransaction.isLoading && <div>Transacting ..... </div>}
-    </div>
+      {signer.address ?
+
+        (<div className="p-10 m-10 bg-white rounded-xl shadow-lg ">
+          <h3 className="mb-10 text-lg py-2 px-4">Store your Favourite Number</h3>
+          <div className="flex align-middle ">
+            <input type="text" placeholder="Enter a Number" value={enteredNumber == 0 ? "" : enteredNumber} onChange={handleForm} className="placeholder:italic placeholder:text-slate-400 block bg-white w-5/6 border border-slate-300 rounded-md py-2 pl-9 pr-3 shadow-sm focus:outline-none focus:border-sky-500 focus:ring-sky-500 focus:ring-1 sm:text-sm" />
+            <button className=" ml-auto mr-10 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" disabled={!write || waitForTransaction.isLoading || writeNumLoading} onClick={writeNumber}>
+              {waitForTransaction.isLoading ? <div>Transacting..... </div> : (writeNumLoading ? <div>Check Wallet</div> : "Store")}
+            </button>
+
+          </div>
+        </div>)
+        :
+        (
+          <div class="flex justify-center">
+            <div class="bg-white p-10 m-10 rounded-lg shadow-lg">
+              <ConnectButton  label="CONNECT TO INTERACT"/>
+            </div>
+          </div>
+        )
+      }
+
+    </div >
   )
 }
